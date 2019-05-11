@@ -1,28 +1,16 @@
 import Main.Point;
-import Main.ctx;
 
 class Ray {
 	public var a:Point;
 	public var b:Point;
 
-	public function new(ax:Float, ay:Float) {
-		this.a = {
-			x: ax,
-			y: ay
-		};
-		this.b = {
-			x: 1,
-			y: 0
-		};
+	public function new(a:Point, b:Point) {
+		this.a = a;
+		this.b = b;
 	}
 
-	public function lookAt(x:Float, y:Float) {
-		this.b = {
-			x: x - this.a.x,
-			y: y - this.a.y
-		}
-		
-		this.b = normalize(this.b);
+	public function updatePos(a:Point) {
+		this.a = a;
 	}
 
 	public function castTo(wall:Wall) {
@@ -47,31 +35,10 @@ class Ray {
 		if (t > 0 && t < 1 && u > 0) {
 			return {
 				x: x1+t*(x2-x1),
-				y: y1+t*(y2-y1),
-				t: t
+				y: y1+t*(y2-y1)
 			}
 		}
 
 		return null;
-
-	}
-
-	public function draw() {
-		ctx.strokeStyle = '#0000FF';
-		ctx.beginPath();
-		ctx.arc(this.a.x, this.a.y, 5, 0, 360, false);
-		ctx.closePath();
-		ctx.fill();
-	}
-
-	private function normalize(a:Point) :Point {
-		var min = 0;
-		var maxX = Main.canvas.width;
-		var maxY = Main.canvas.height;
-
-		return {
-			x: (a.x - min) / (maxX - min),
-			y: (a.y - min) / (maxY - min)
-		}
 	}
 }

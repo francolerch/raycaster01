@@ -6,8 +6,8 @@
 			"request": "launch",
 			"name": "Launch Chrome",
 			"url": "http://localhost:8080",
-			"file": "${workspaceFolder}/dist/index.html",
-			"webRoot": "${workspaceFolder}/dist",
+			"file": "${workspaceFolder}/index.html",
+			"webRoot": "${workspaceFolder}",
 			"preLaunchTask": {
 				"type": "haxe",
 				"args": "active configuration"

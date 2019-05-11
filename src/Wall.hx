@@ -17,7 +17,8 @@ class Wall {
 	}
 
 	public function draw() {
-		ctx.strokeStyle = '#999';
+		ctx.strokeStyle = '#000000';
+		ctx.lineWidth = 2;
 		ctx.beginPath();
 		ctx.moveTo(this.a.x, this.a.y );
 		ctx.lineTo(this.b.x, this.b.y);
