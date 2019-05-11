@@ -1,0 +1,6 @@
+-cp src
+-main Main
+-js dist/index.js
+--debug
+-dce full
+-D js-es=6
