@@ -5,6 +5,7 @@ class Particle {
 
     public var rays : Array<Ray>;
     public var a : Point;
+    private var raysAmount : Float = 50;
 
     public function new(x:Float, y:Float) {
         this.a = {
@@ -14,7 +15,9 @@ class Particle {
 
         this.rays = new Array();
 
-        for (i in 0...360) {
+        var i = (Math.PI*2)/this.raysAmount; 
+        while (i < Math.PI*2) {
+            i += (Math.PI*2)/this.raysAmount;
             var b = {
                 x: Math.cos(toRadians(i)),
                 y: Math.sin(toRadians(i))
@@ -27,15 +30,6 @@ class Particle {
 
     public function updatePos(a:Point) {
         this.a = a;
-    }
-
-    public function draw() {
-        ctx.strokeStyle = '#FF0000';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(this.a.x, this.a.y,5,0,360,false);
-        ctx.closePath();
-        ctx.fill();
     }
 
     public function look(walls:Array<Wall>) {
@@ -56,12 +50,19 @@ class Particle {
 			}
 
             if (closest != null) {
-                ctx.strokeStyle = '#FF0000';
+                ctx.strokeStyle = '#f55';
+                ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(this.a.x, this.a.y);
                 ctx.lineTo(closest.x, closest.y);
                 ctx.closePath();
                 ctx.stroke();
+
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(closest.x, closest.y, 5, 0, 360, false);
+                ctx.closePath();
+                ctx.fill();
             }
 		}
       

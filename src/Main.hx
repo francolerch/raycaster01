@@ -18,6 +18,7 @@ class Main {
 	private var particle:Particle;
 	private var ray:Ray;
 	private var walls:Array<Wall>;
+	private var boxes:Array<Box>;
 	private var updateCanvas:Bool = true;
 	private var mouse : Point = {x:0, y:0};
 
@@ -30,21 +31,22 @@ class Main {
 			updateCanvas = true;
 		}
 		this.particle = new Particle(150, 300);
+		this.boxes = new Array();
 		this.walls = new Array();
-		for (i in 0...9) 
-			this.walls.push(
-				new Wall(
-					Math.random()*canvas.height,
-					Math.random()*canvas.height,
-					Math.random()*canvas.height,
-					Math.random()*canvas.height
-				)
-			);
-		
-		this.walls.push(new Wall(0, 0, canvas.width, 0));
-		this.walls.push(new Wall(canvas.width, 0, canvas.width, canvas.height));
-		this.walls.push(new Wall(canvas.width, canvas.height, 0, canvas.height));
-		this.walls.push(new Wall(0, canvas.height, 0, 0));
+		this.boxes.push(new Box({x: 0, y: 0}, canvas.width, 0));
+
+		for (i in 0...20) {
+			var pos = {
+				x: Math.random() * canvas.width,
+				y: Math.random() * canvas.height
+			}
+			this.boxes.push(new Box(pos, 60, Math.random() * 360));
+		}
+		for (b in this.boxes) {
+			for (w in b.walls) {
+				this.walls.push(w);
+			}
+		}
 	}
 
 	public function drawLoop(dt:Float) {
@@ -66,7 +68,7 @@ class Main {
 	static function main() {
 		var centerElement = Browser.document.getElementById('canvas');
 		Main.canvas = Browser.document.createCanvasElement();
-		Main.canvas.height = 800;
+		Main.canvas.height = 600;
 		Main.canvas.width = 600;
 		centerElement.appendChild(Main.canvas);
 		Browser.window.addEventListener('keydown', function (event){

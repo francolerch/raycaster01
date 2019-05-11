@@ -5,14 +5,14 @@ class Wall {
 	public var a:Point;
 	public var b:Point;
 
-	public function new(ax:Float, ay:Float, bx:Float, by:Float) {
+	public function new(a:Point, b:Point) {
 		this.a = {
-			x: ax,
-			y: ay
+			x: a.x,
+			y: a.y
 		};
 		this.b = {
-			x: bx,
-			y: by
+			x: b.x,
+			y: b.y
 		};
 	}
 
