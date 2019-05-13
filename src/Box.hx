@@ -1,4 +1,4 @@
-import Main.Point;
+import Helpers;
 
 class Box {
     

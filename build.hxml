@@ -1,5 +1,5 @@
 -cp src
--main Main
+-main Boot
 -js index.js
 -dce full
 -D js-es=6
