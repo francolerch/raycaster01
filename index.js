@@ -53,6 +53,9 @@ class Box {
 	}
 }
 class Helpers {
+	static toDegrees(x) {
+		return x * (180 / Math.PI);
+	}
 	static getDist(a,b) {
 		var c1 = a.x - b.x;
 		var c2 = a.y - b.y;
@@ -87,7 +90,8 @@ class Main {
 				this.walls.push(w);
 			}
 		}
-		this.particle = new Particle(Main.boxes,this.walls);
+		this.particles = [];
+		this.particles.push(new Particle(Main.boxes,this.walls));
 	}
 	drawLoop(dt) {
 		window.requestAnimationFrame($bind(this,this.drawLoop));
@@ -105,7 +109,13 @@ class Main {
 			++_g;
 			w.draw();
 		}
-		this.particle.update(this.walls);
+		var _g2 = 0;
+		var _g3 = this.particles;
+		while(_g2 < _g3.length) {
+			var p = _g3[_g2];
+			++_g2;
+			p.update(this.walls);
+		}
 	}
 	onMouseMove(event) {
 		Main.mouse = { x : event.layerX, y : event.layerY};
@@ -114,7 +124,7 @@ class Main {
 }
 class Particle {
 	constructor(boxes,walls) {
-		this.a = { x : 0, y : 0};
+		this.a = { x : 150, y : 150};
 		this.walls = [];
 		this.rays = [];
 		var _g = 0;
@@ -138,6 +148,7 @@ class Particle {
 		}
 	}
 	update(walls) {
+		var intersections = [];
 		this.updatePos();
 		this.rays = this.removeDuplicates(this.rays);
 		var _g = 0;
@@ -146,7 +157,11 @@ class Particle {
 			var r = _g1[_g];
 			++_g;
 			r.update(this.a);
-			r.castTo(walls);
+			r.castTo(walls,intersections);
+		}
+		if(intersections.length > 0) {
+			this.drawIntersectionsMesh(intersections);
+			this.draw();
 		}
 	}
 	updatePos() {
@@ -160,6 +175,37 @@ class Particle {
 			i += 1;
 			return arrayToReturn;
 		});
+	}
+	drawIntersectionsMesh(intersections) {
+		if(intersections.length == 0) {
+			return;
+		}
+		haxe_ds_ArraySort.sort(this.rays,function(e,n) {
+			var eDegrees = Helpers.toDegrees(e.angle) * 100 | 0;
+			var nDegrees = Helpers.toDegrees(n.angle) * 100 | 0;
+			return eDegrees - nDegrees;
+		});
+		Main.ctx.fillStyle = "#cccccc";
+		Main.ctx.moveTo(intersections[0].p.x,intersections[0].p.y);
+		Main.ctx.beginPath();
+		var _g = 0;
+		while(_g < intersections.length) {
+			var i = intersections[_g];
+			++_g;
+			if(i.p == intersections[0].p) {
+				continue;
+			}
+			Main.ctx.lineTo(i.p.x,i.p.y);
+		}
+		Main.ctx.closePath();
+		Main.ctx.fill();
+	}
+	draw() {
+		Main.ctx.fillStyle = "#000000";
+		Main.ctx.beginPath();
+		Main.ctx.arc(this.a.x,this.a.y,3,0,360,false);
+		Main.ctx.closePath();
+		Main.ctx.fill();
 	}
 }
 class Ray {
@@ -180,7 +226,7 @@ class Ray {
 	getAngle() {
 		return Math.atan2(this.a.y - this.b.y,this.a.x - this.b.x);
 	}
-	castTo(walls) {
+	castTo(walls,intersections) {
 		var record = 100000000;
 		var closest = null;
 		var _g = 0;
@@ -192,12 +238,13 @@ class Ray {
 				var dist = Helpers.getDist(this.a,pt);
 				if(dist < record) {
 					record = dist;
-					closest = pt;
+					closest = { p : pt, w : w};
 				}
 			}
 		}
 		if(closest != null) {
-			this.draw(closest);
+			this.closest = closest;
+			intersections.push(closest);
 		}
 	}
 	getClosestIntersection(wall) {
@@ -215,30 +262,10 @@ class Ray {
 		}
 		var t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
 		var u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
-		if(t >= -0.01 && t <= 1.01 && u < 0) {
+		if(t > 0 && t < 1.01 && u < 0) {
 			return { x : x1 + t * (x2 - x1), y : y1 + t * (y2 - y1)};
 		}
 		return null;
-	}
-	draw(closest) {
-		this.drawRay(closest);
-		this.drawHit(closest);
-	}
-	drawRay(closest) {
-		Main.ctx.strokeStyle = "#f55";
-		Main.ctx.lineWidth = 1;
-		Main.ctx.beginPath();
-		Main.ctx.moveTo(this.a.x,this.a.y);
-		Main.ctx.lineTo(closest.x,closest.y);
-		Main.ctx.closePath();
-		Main.ctx.stroke();
-	}
-	drawHit(closest) {
-		Main.ctx.fillStyle = "#FF0000";
-		Main.ctx.beginPath();
-		Main.ctx.arc(closest.x,closest.y,5,0,360,false);
-		Main.ctx.closePath();
-		Main.ctx.fill();
 	}
 }
 class Wall {
@@ -255,6 +282,134 @@ class Wall {
 		ctx.lineTo(this.b.x,this.b.y);
 		ctx.closePath();
 		ctx.stroke();
+	}
+}
+class haxe_ds_ArraySort {
+	static sort(a,cmp) {
+		haxe_ds_ArraySort.rec(a,cmp,0,a.length);
+	}
+	static rec(a,cmp,from,to) {
+		var middle = from + to >> 1;
+		if(to - from < 12) {
+			if(to <= from) {
+				return;
+			}
+			var _g = from + 1;
+			var _g1 = to;
+			while(_g < _g1) {
+				var i = _g++;
+				var j = i;
+				while(j > from) {
+					if(cmp(a[j],a[j - 1]) < 0) {
+						haxe_ds_ArraySort.swap(a,j - 1,j);
+					} else {
+						break;
+					}
+					--j;
+				}
+			}
+			return;
+		}
+		haxe_ds_ArraySort.rec(a,cmp,from,middle);
+		haxe_ds_ArraySort.rec(a,cmp,middle,to);
+		haxe_ds_ArraySort.doMerge(a,cmp,from,middle,to,middle - from,to - middle);
+	}
+	static doMerge(a,cmp,from,pivot,to,len1,len2) {
+		var first_cut;
+		var second_cut;
+		var len11;
+		var len22;
+		if(len1 == 0 || len2 == 0) {
+			return;
+		}
+		if(len1 + len2 == 2) {
+			if(cmp(a[pivot],a[from]) < 0) {
+				haxe_ds_ArraySort.swap(a,pivot,from);
+			}
+			return;
+		}
+		if(len1 > len2) {
+			len11 = len1 >> 1;
+			first_cut = from + len11;
+			second_cut = haxe_ds_ArraySort.lower(a,cmp,pivot,to,first_cut);
+			len22 = second_cut - pivot;
+		} else {
+			len22 = len2 >> 1;
+			second_cut = pivot + len22;
+			first_cut = haxe_ds_ArraySort.upper(a,cmp,from,pivot,second_cut);
+			len11 = first_cut - from;
+		}
+		haxe_ds_ArraySort.rotate(a,cmp,first_cut,pivot,second_cut);
+		var new_mid = first_cut + len22;
+		haxe_ds_ArraySort.doMerge(a,cmp,from,first_cut,new_mid,len11,len22);
+		haxe_ds_ArraySort.doMerge(a,cmp,new_mid,second_cut,to,len1 - len11,len2 - len22);
+	}
+	static rotate(a,cmp,from,mid,to) {
+		if(from == mid || mid == to) {
+			return;
+		}
+		var n = haxe_ds_ArraySort.gcd(to - from,mid - from);
+		while(n-- != 0) {
+			var val = a[from + n];
+			var shift = mid - from;
+			var p1 = from + n;
+			var p2 = from + n + shift;
+			while(p2 != from + n) {
+				a[p1] = a[p2];
+				p1 = p2;
+				if(to - p2 > shift) {
+					p2 += shift;
+				} else {
+					p2 = from + (shift - (to - p2));
+				}
+			}
+			a[p1] = val;
+		}
+	}
+	static gcd(m,n) {
+		while(n != 0) {
+			var t = m % n;
+			m = n;
+			n = t;
+		}
+		return m;
+	}
+	static upper(a,cmp,from,to,val) {
+		var len = to - from;
+		var half;
+		var mid;
+		while(len > 0) {
+			half = len >> 1;
+			mid = from + half;
+			if(cmp(a[val],a[mid]) < 0) {
+				len = half;
+			} else {
+				from = mid + 1;
+				len = len - half - 1;
+			}
+		}
+		return from;
+	}
+	static lower(a,cmp,from,to,val) {
+		var len = to - from;
+		var half;
+		var mid;
+		while(len > 0) {
+			half = len >> 1;
+			mid = from + half;
+			if(cmp(a[mid],a[val]) < 0) {
+				from = mid + 1;
+				len = len - half - 1;
+			} else {
+				len = half;
+			}
+		}
+		return from;
+	}
+	static swap(a,i,j) {
+		var tmp = a[i];
+		a[i] = a[j];
+		a[j] = tmp;
 	}
 }
 var $_, $fid = 0;

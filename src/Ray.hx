@@ -5,6 +5,7 @@ class Ray {
     public var b:Point;
     public var to:Point;
     public var angle:Float;
+    public var closest:Intersection;
 
     public function new(a:Point, b:Point) {
         this.a = a;
@@ -30,9 +31,9 @@ class Ray {
         return Math.atan2(this.a.y - this.b.y, this.a.x - this.b.x);
     }
 
-    public function castTo(walls:Array<Wall>) {
+    public function castTo(walls:Array<Wall>, intersections:Array<Intersection>) {
         var record : Float = 100000000;
-        var closest:Point = null;
+        var closest : Intersection = null;
 
         for (w in walls) {
             var pt = getClosestIntersection(w);
@@ -41,16 +42,18 @@ class Ray {
                 var dist = Helpers.getDist(this.a, pt);
                 if (dist < record) {
                     record = dist;
-                    closest = pt;
+                    closest = {
+                        p: pt,
+                        w: w
+                    }
                 }
             }
         }
 
         if (closest != null) {
-            draw(closest);
+            this.closest = closest;
+            intersections.push(closest);
         }
-
-
     }
 
     public function getClosestIntersection(wall:Wall) {
@@ -71,8 +74,7 @@ class Ray {
 
         var t = ((x1-x3) * (y3-y4) - (y1-y3) * (x3-x4)) / den;
         var u = -((x1-x2) * (y1-y3) - (y1-y2) * (x1-x3)) / den;
-
-        if (t >= -0.01 && t <= 1.01 && u < 0) {
+        if (t > 0 && t < 1.01 && u < 0) {
             return {
                 x: x1+t*(x2-x1),
                 y: y1+t*(y2-y1)
@@ -82,26 +84,13 @@ class Ray {
         return null;
     }
 
-    private function draw(closest:Point) {
-        drawRay(closest);
-        drawHit(closest);
-    }
-
-    private function drawRay(closest:Point) {
+    public function draw() {
         Main.ctx.strokeStyle = '#f55';
         Main.ctx.lineWidth = 1;
         Main.ctx.beginPath();
         Main.ctx.moveTo(this.a.x, this.a.y);
-        Main.ctx.lineTo(closest.x, closest.y);
+        Main.ctx.lineTo(this.closest.p.x, this.closest.p.y);
         Main.ctx.closePath();
         Main.ctx.stroke();
-    }
-
-    private function drawHit(closest:Point) {
-        Main.ctx.fillStyle = '#FF0000';
-        Main.ctx.beginPath();
-        Main.ctx.arc(closest.x, closest.y, 5, 0, 360, false);
-        Main.ctx.closePath();
-        Main.ctx.fill();
     }
 }

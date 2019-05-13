@@ -10,7 +10,7 @@ class Main {
     public static var mouse : Point = {x:0, y:0};
 
     private var canvas:CanvasElement;
-    private var particle:Particle;
+    private var particles:Array<Particle>;
     private var walls:Array<Wall>;
     private var updateCanvas:Bool = true;
 
@@ -35,7 +35,10 @@ class Main {
                 this.walls.push(w);
             }
         }
-        this.particle = new Particle(boxes, walls);
+        this.particles = new Array<Particle>();
+       
+        this.particles.push(new Particle(boxes, walls));
+
     }
 
     public function drawLoop(dt:Float) {
@@ -50,7 +53,8 @@ class Main {
         Main.ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (w in walls)
             w.draw();
-        this.particle.update(walls);
+        for (p in particles)
+            p.update(walls);
     }
 
     private function onMouseMove(event:MouseEvent){
