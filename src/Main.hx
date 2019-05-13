@@ -1,85 +1,67 @@
+import js.html.MouseEvent;
 import js.html.CanvasElement;
+import js.html.CanvasRenderingContext2D;
+import Helpers;
 import js.Browser;
 
-typedef Point = {
-	var x:Float;
-	var y:Float;
-}
-
-typedef Segment = {
-	var a:Point;
-	var b:Point;
-}
-
 class Main {
-	public static var canvas:js.html.CanvasElement;
-	public static var ctx:js.html.CanvasRenderingContext2D;
+    public static var ctx:CanvasRenderingContext2D;
+    public static var boxes:Array<Box>;
+    public static var mouse : Point = {x:0, y:0};
 
-	private var particle:Particle;
-	private var ray:Ray;
-	private var walls:Array<Wall>;
-	private var boxes:Array<Box>;
-	private var updateCanvas:Bool = true;
-	private var mouse : Point = {x:0, y:0};
+    private var canvas:CanvasElement;
+    private var particles:Array<Particle>;
+    private var walls:Array<Wall>;
+    private var updateCanvas:Bool = true;
 
-	public function new() {
-		Main.canvas.onmousemove = function(event) {
-			this.mouse = {
-				x: event.layerX,
-				y: event.layerY
-			}
-			updateCanvas = true;
-		}
-		this.particle = new Particle(150, 300);
-		this.boxes = new Array();
-		this.walls = new Array();
-		this.boxes.push(new Box({x: 0, y: 0}, canvas.width, 0));
+    public function new(canvas:CanvasElement) {
+        this.canvas = canvas;
+        Main.ctx = canvas.getContext('2d');
+        this.canvas.onmousemove = this.onMouseMove;
 
-		for (i in 0...20) {
-			var pos = {
-				x: Math.random() * canvas.width,
-				y: Math.random() * canvas.height
-			}
-			this.boxes.push(new Box(pos, 60, Math.random() * 360));
-		}
-		for (b in this.boxes) {
-			for (w in b.walls) {
-				this.walls.push(w);
-			}
-		}
-	}
+        boxes = new Array();
+        this.walls = new Array();
+        boxes.push(new Box({x: 0, y: 0}, canvas.width, 0));
 
-	public function drawLoop(dt:Float) {
-		Browser.window.requestAnimationFrame(drawLoop);
-		if (updateCanvas) {
-			update();
-			updateCanvas = false;
-		}
-	}
+        for (i in 0...20) {
+            var pos = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height
+            }
+            boxes.push(new Box(pos, 60, Math.random() * 360));
+        }
+        for (b in boxes) {
+            for (w in b.walls) {
+                this.walls.push(w);
+            }
+        }
+        this.particles = new Array<Particle>();
+       
+        this.particles.push(new Particle(boxes, walls));
 
-	public function update() {
-		this.particle.updatePos(mouse);
-		Main.ctx.clearRect(0, 0, canvas.width, canvas.height);
-		for (w in walls)
-			w.draw();
-		this.particle.look(walls);
-	}
+    }
 
-	static function main() {
-		var centerElement = Browser.document.getElementById('canvas');
-		Main.canvas = Browser.document.createCanvasElement();
-		Main.canvas.height = 600;
-		Main.canvas.width = 600;
-		centerElement.appendChild(Main.canvas);
-		Browser.window.addEventListener('keydown', function (event){
-			if (event.code == 'KeyR')
-				Browser.window.location.reload();
-		});
+    public function drawLoop(dt:Float) {
+        Browser.window.requestAnimationFrame(drawLoop);
+        if (updateCanvas) {
+            update(dt);
+            updateCanvas = false;
+        }
+    }
 
-		if (Main.canvas.getContext != null) {
-			Main.ctx = Main.canvas.getContext('2d');
-			var main = new Main();
-			Browser.window.onload = main.drawLoop;
-		}
-	}
+    private function update(dt:Float) {
+        Main.ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (w in walls)
+            w.draw();
+        for (p in particles)
+            p.update(walls);
+    }
+
+    private function onMouseMove(event:MouseEvent){
+        Main.mouse = {
+            x: event.layerX,
+            y: event.layerY
+        }
+        this.updateCanvas = true;
+    }
 }
